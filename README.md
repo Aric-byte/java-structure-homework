@@ -2,6 +2,8 @@
 
 按知识点拆分的 SSM 学习项目。从 Spring IoC/AOP、MyBatis 基础与多表查询、MyBatis-Plus，到 SpringMVC 和 SSM 三层整合，每个知识点都有可运行的代码、测试和笔记。另提供一个学生管理图形界面，用于演示与接口验证。
 
+**作业二「资料上传下载系统」**（SSM 实训任务书 V2.0）在 `com.filesys` 模块中实现，见 [作业二](#作业二资料上传下载系统)。
+
 ## 技术栈
 
 | 组件 | 版本 |
@@ -29,6 +31,7 @@
 | MyBatis-Plus | `com.mybatis07` | 通用 CRUD、分页插件、自动填充、乐观锁、ActiveRecord | 测试 |
 | SpringMVC | `com.springmvc` | XML 与注解两种方式、参数绑定、页面跳转、拦截器、文件上传下载、全局异常 | 网页 |
 | SSM 整合 | `com.ssm` | Controller → Service（事务）→ Mapper 三层整合 | 网页 |
+| **作业二** | `com.filesys` | 资料上传下载系统：登录 + 拦截器、文件上传下载、元信息入库 | 网页 |
 
 大部分模块同时提供 XML 和注解两个版本，便于对比。每个模块的要点整理在 `src/main/resources/<模块>/*知识点.md` 中。
 
@@ -48,6 +51,7 @@ CREATE DATABASE IF NOT EXISTS homework11_3 DEFAULT CHARSET utf8mb4;
 | `student.sql` | `student` | mybatis06、SSM、图形界面 |
 | `dept_emp.sql` | `dept`、`emp`、`skill`、`emp_skill` | mybatis04–05 |
 | `mp_student.sql` | `mp_student` | MyBatis-Plus |
+| `filesys.sql` | `sys_user`、`file_info`、`download_log` + 测试账号 | 作业二 |
 
 ### 2. 配置数据库连接
 
@@ -58,7 +62,7 @@ cp src/main/resources/common/db.properties.example src/main/resources/common/db.
 ```
 
 ```properties
-jdbc.url=jdbc:mysql://localhost:3306/homework11_3?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
+jdbc.url=jdbc:mysql://localhost:3306/homework11_3?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF-8
 jdbc.username=root
 jdbc.password=你的密码
 ```
@@ -89,7 +93,7 @@ jdbc.password=你的密码
 
 ## 学生管理图形界面
 
-首页 `/` 是一个单页应用（原生 HTML + JavaScript），调用 `/ssm/api/students` 下的 RESTful 接口。
+地址 `/students.html`（「其他模块演示导航」中有入口），是一个单页应用（原生 HTML + JavaScript），调用 `/ssm/api/students` 下的 RESTful 接口。
 
 **左侧：学生管理**
 
@@ -130,9 +134,58 @@ jdbc.password=你的密码
 
 约定：`200` 成功、`400` 参数错误、`404` 资源不存在、`500` 系统错误（不向前端暴露堆栈）。
 
+## 作业二：资料上传下载系统
+
+按《SSM 实训任务书 V2.0》实现的「学员在线提交结业作业材料」系统：磁盘存文件、数据库存元信息，登录拦截 + 归属校验保证每个人只能看到和下载自己的文件。
+
+**入口**：<http://localhost:8080/>（首页即作业二，未登录时自动转到登录页；直接访问 `/filesys/` 也可以）
+
+**测试账号**（`sql/filesys.sql` 初始化，密码以 SHA-256 加盐存储）：
+
+| 账号 | 密码 |
+|------|------|
+| `zhangsan` | `123456` |
+| `lisi` | `123456` |
+
+### 功能
+
+| 编号 | 功能 | 实现要点 |
+|------|------|----------|
+| F1 | 登录与拦截器 | 查 `sys_user` 校验 SHA-256(盐 + 密码)；登录后用户名、ID 存 session；`LoginInterceptor` 用 `WebMvcConfigurer#addInterceptors` 注册，放行 `/login` 与 `/static/**` |
+| F2 | 作业提交（上传） | 支持一次多个文件；服务端校验大小 ≤ 10MB 和扩展名白名单（pdf/jpg/png/doc/docx/zip）；落盘名 UUID + 原扩展名；按 `用户名/年/月` 分目录；元信息写入 `file_info` |
+| F3 | 提交列表 | 只显示当前用户的记录；按 文档 / 图片 / 压缩包 分类筛选；无数据时友好提示 |
+| F4 | 文件下载 | 只传 fileId，路径从数据库取；校验归属，他人文件提示「无权访问」；中文名用 `filename*=UTF-8''`；文件丢失时友好提示 |
+| F5 | 下载日志（AOP） | `DownloadLogAspect` 在下载校验通过后写入 `download_log` |
+| 追加 | 冻结、下载次数、删除 | 上传者可冻结 / 解冻（冻结期间禁止下载）；每次成功下载 `download_count + 1`；逻辑删除（`status = 0`） |
+
+### 设计说明
+
+- **为什么原始文件名要存在数据库里**：落盘名由服务端用 UUID 生成（防重名覆盖、防路径穿越和特殊字符），磁盘上已看不出原名；列表展示和下载时的文件名只能从库里取回。
+- **`file_info(uploader_id)` 索引**：列表按 `uploader_id` 查当前用户的文件，归属校验也依赖它，有索引时不必全表扫描。
+- **所有安全校验都在服务端**：前端 `accept` 只是选择文件时的便利，类型、大小、归属都由 `FileService` 判断。
+- **上传路径来自配置文件**：`src/main/resources/filesys/filesys.properties` 的 `upload.root`，默认 `${user.home}/ssm-filesys-upload`。
+
+### 代码位置
+
+| 层 | 文件 |
+|----|------|
+| 配置 | `com.filesys.config.FileSysMvcConfig`（MVC + 拦截器注册）、`resources/filesys/spring-datasource.xml`（数据源 / MyBatis / 事务）、`filesys.properties` |
+| 表现层 | `controller/LoginController`、`FileController`、`FileSysExceptionHandler` |
+| 业务层 | `service/UserService`、`FileService`（上传、下载、冻结、删除的全部校验） |
+| 持久层 | `mapper/*Mapper.java` + `resources/filesys/mapper/*.xml` |
+| 其他 | `interceptor/LoginInterceptor`、`aspect/DownloadLogAspect`、`util/PasswordUtil` |
+| 视图 | `webapp/WEB-INF/views/filesys/*.jsp`（JSP + JSTL）、`webapp/static/filesys/filesys.css` |
+
+### 验收四条
+
+1. 登录后上传 PDF：磁盘 `upload.root/zhangsan/年/月/` 下出现 UUID 命名的文件，`file_info` 新增一条记录，列表显示该文件。
+2. 未登录访问 `/filesys/files` 被重定向到登录页。
+3. 点击下载，文件正常下载，中文文件名不乱码。
+4. 换 `lisi` 登录，看不到也下载不了 `zhangsan` 的文件。
+
 ## 其他网页演示
 
-首页右上角「其他模块演示导航」（`/demos.jsp`）列出了 SpringMVC 与 SSM 模块的全部页面：
+作业二页面右上角「其他模块演示」（`/demos.jsp`）列出了学生管理图形界面、SpringMVC 与 SSM 模块的全部页面：
 
 | 功能 | 路径 |
 |------|------|
@@ -159,7 +212,8 @@ homework11-3
 │   ├── common/db.properties     数据库连接（本地文件，不提交）
 │   └── <模块>/                  各模块配置、Mapper XML、知识点笔记
 ├── src/main/webapp
-│   ├── index.html               学生管理图形界面
+│   ├── index.jsp                首页：跳转到作业二 /filesys/
+│   ├── students.html            学生管理图形界面
 │   ├── demos.jsp                其他模块演示导航
 │   └── WEB-INF/                 web.xml 与 JSP 视图
 ├── src/test/java                各模块测试
