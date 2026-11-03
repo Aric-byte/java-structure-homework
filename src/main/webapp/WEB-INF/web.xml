@@ -10,6 +10,20 @@
     </welcome-file-list>
 
     <!--
+      静态文本资源声明 UTF-8：Tomcat 默认只返回 "text/css"（不带 charset），
+      浏览器在中文 Windows 上按 GBK 解码，直接打开 /static/css/demo.css 时中文注释乱码。
+      容器默认 Servlet 与 <mvc:resources> 都按此映射设置 Content-Type。
+    -->
+    <mime-mapping>
+        <extension>css</extension>
+        <mime-type>text/css;charset=UTF-8</mime-type>
+    </mime-mapping>
+    <mime-mapping>
+        <extension>js</extension>
+        <mime-type>text/javascript;charset=UTF-8</mime-type>
+    </mime-mapping>
+
+    <!--
       ============================================================
       SSM 整合 —— 父容器监听器（Service/Mapper/事务）
       ============================================================
