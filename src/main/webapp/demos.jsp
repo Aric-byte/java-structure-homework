@@ -44,6 +44,20 @@
         <td><a href="${pageContext.request.contextPath}/annotation/param/bind">/annotation/param/bind</a></td></tr>
 </table>
 
+<h2>作业二：资料上传下载系统（com.filesys）</h2>
+<table>
+    <tr><th>演示</th><th>链接</th></tr>
+    <tr><td>登录 → 提交作业 → 列表 → 下载（测试账号 zhangsan / lisi，密码 123456）</td>
+        <td><a href="${pageContext.request.contextPath}/filesys/">/filesys/</a></td></tr>
+</table>
+
+<h2>学生管理图形界面（com.ssm）</h2>
+<table>
+    <tr><th>演示</th><th>链接</th></tr>
+    <tr><td>增删改查、模糊查询、分页、批量删除 + 功能验证面板（REST 接口 /ssm/api/students）</td>
+        <td><a href="${pageContext.request.contextPath}/students.html">/students.html</a></td></tr>
+</table>
+
 <h2>SSM 三层整合（com.ssm）</h2>
 <table>
     <tr><th>演示</th><th>链接</th></tr>

@@ -14,6 +14,7 @@
     <h1>资料上传下载系统</h1>
     <span class="user">
         <c:out value="${sessionScope.realName}"/>（<c:out value="${sessionScope.username}"/>）
+        · <a href="<c:url value='/demos.jsp'/>">其他模块演示</a>
         · <a href="<c:url value='/filesys/logout'/>">退出</a>
     </span>
 </header>

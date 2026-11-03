@@ -6,7 +6,7 @@
          version="6.0">
 
     <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
     <!-- 会话只用 Cookie 跟踪，不把 ;jsessionid= 拼进 URL（避免会话 ID 出现在地址栏和日志里） -->
