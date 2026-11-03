@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- namespace 必须与接口全限定名一致，否则调用时报 BindingException -->
+<mapper namespace="com.filesys.mapper.SysUserMapper">
+
+    <!-- 登录：只按用户名查出盐和哈希，密码比对在 Java 中完成（不把明文传进 SQL） -->
+    <select id="findByUsername" resultType="com.filesys.entity.SysUser">
+        SELECT id, username, password, salt, real_name, create_time
+        FROM sys_user
+        WHERE username = #{username}
+    </select>
+</mapper>

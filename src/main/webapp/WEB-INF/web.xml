@@ -9,6 +9,11 @@
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 
+    <!-- 会话只用 Cookie 跟踪，不把 ;jsessionid= 拼进 URL（避免会话 ID 出现在地址栏和日志里） -->
+    <session-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
     <!--
       静态文本资源声明 UTF-8：Tomcat 默认只返回 "text/css"（不带 charset），
       浏览器在中文 Windows 上按 GBK 解码，直接打开 /static/css/demo.css 时中文注释乱码。
@@ -65,6 +70,10 @@
     <filter-mapping>
         <filter-name>encodingFilter</filter-name>
         <url-pattern>/ssm/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>encodingFilter</filter-name>
+        <url-pattern>/filesys/*</url-pattern>
     </filter-mapping>
 
     <!--
@@ -139,6 +148,38 @@
     <servlet-mapping>
         <servlet-name>ssm</servlet-name>
         <url-pattern>/ssm/*</url-pattern>
+    </servlet-mapping>
+
+    <!--
+      ============================================================
+      作业二：资料上传下载系统（SSM 实训任务书 V2.0）
+      纯 Java 配置的 DispatcherServlet：contextClass 指定注解容器，
+      contextConfigLocation 写配置类全限定名（拦截器在 FileSysMvcConfig#addInterceptors 注册）
+      访问入口：/filesys/  （测试账号见 sql/filesys.sql）
+      ============================================================
+    -->
+    <servlet>
+        <servlet-name>filesys</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextClass</param-name>
+            <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+        </init-param>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>com.filesys.config.FileSysMvcConfig</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+        <!-- 容器硬上限（兜底）；10MB 的业务上限由 FileService 按 filesys.properties 校验 -->
+        <multipart-config>
+            <max-file-size>20971520</max-file-size>
+            <max-request-size>62914560</max-request-size>
+            <file-size-threshold>1048576</file-size-threshold>
+        </multipart-config>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>filesys</servlet-name>
+        <url-pattern>/filesys/*</url-pattern>
     </servlet-mapping>
 
 </web-app>

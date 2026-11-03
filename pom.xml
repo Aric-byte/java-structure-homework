@@ -71,6 +71,17 @@
             <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
+        <!-- JSTL 3.0（Jakarta）：Tomcat 不自带，作业二视图层 JSP + JSTL 需要 -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>3.0.1</version>
+        </dependency>
         <!-- @RequestBody 接收 JSON：mvc:annotation-driven 检测到 Jackson 后自动注册 JSON 转换器 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

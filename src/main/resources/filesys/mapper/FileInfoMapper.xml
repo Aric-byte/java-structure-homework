@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.filesys.mapper.FileInfoMapper">
+
+    <sql id="columns">
+        id, origin_name, store_name, file_path, ext, category, file_size, content_type,
+        uploader_id, create_time, status, download_count
+    </sql>
+
+    <insert id="insert" parameterType="com.filesys.entity.FileInfo"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_info (origin_name, store_name, file_path, ext, category,
+                               file_size, content_type, uploader_id, status)
+        VALUES (#{originName}, #{storeName}, #{filePath}, #{ext}, #{category},
+                #{fileSize}, #{contentType}, #{uploaderId}, 1)
+    </insert>
+
+    <!-- 列表只查当前用户的记录（uploader_id 走索引 idx_uploader_id），已删除的不显示 -->
+    <select id="findByUploader" resultType="com.filesys.entity.FileInfo">
+        SELECT <include refid="columns"/>
+        FROM file_info
+        WHERE uploader_id = #{uploaderId} AND status != 0
+        <if test="category != null and category != ''">AND category = #{category}</if>
+        ORDER BY create_time DESC, id DESC
+    </select>
+
+    <!-- 下载、冻结、删除都先按 ID 取记录，再在 Service 中校验归属 -->
+    <select id="findById" resultType="com.filesys.entity.FileInfo">
+        SELECT <include refid="columns"/> FROM file_info WHERE id = #{id}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE file_info SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <update id="incrementDownloadCount">
+        UPDATE file_info SET download_count = download_count + 1 WHERE id = #{id}
+    </update>
+</mapper>
