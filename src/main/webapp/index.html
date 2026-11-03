@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学生管理系统</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --panel: #fff; --text: #1f2933; --muted: #6b7785; --line: #e1e6ec;
+    --primary: #2f6fdb; --primary-soft: #e8f0fd; --danger: #d64545; --danger-soft: #fdeeee;
+    --ok: #1f8f5f; --code-bg: #111827; --code-text: #d1e2f5;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--panel); border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; }
+  header span { color: var(--muted); font-size: 13px; }
+  header a { margin-left: auto; color: var(--primary); text-decoration: none; font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; padding: 16px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 960px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .card + .card { margin-top: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 15px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input { height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; min-width: 0; }
+  input:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+  button { height: 32px; padding: 0 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--primary); color: var(--primary); }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); background: var(--danger-soft); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; background: #fafbfc; }
+  td.num { font-variant-numeric: tabular-nums; }
+  td .link { border: 0; background: none; color: var(--primary); padding: 0 6px; height: auto; }
+  td .link.del { color: var(--danger); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 0; }
+  .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; color: var(--muted); flex-wrap: wrap; gap: 8px; }
+  form.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  form.grid label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 4px; }
+  .form-msg { min-height: 20px; margin-top: 8px; font-size: 13px; }
+  .form-msg.err { color: var(--danger); } .form-msg.ok { color: var(--ok); }
+  .checks { display: grid; gap: 6px; }
+  .checks button { text-align: left; height: auto; padding: 7px 10px; }
+  .checks small { display: block; color: var(--muted); }
+  #log { background: var(--code-bg); color: var(--code-text); border-radius: 6px; padding: 10px; height: 360px; overflow: auto; font: 12px/1.5 Consolas, monospace; white-space: pre-wrap; word-break: break-all; margin: 0; }
+  #log .req { color: #8fb8ff; } #log .bad { color: #ff9b9b; } #log .good { color: #8fe0b2; }
+</style>
+</head>
+<body>
+<header>
+  <h1>学生管理系统</h1>
+  <span>Spring + SpringMVC + MyBatis · 接口前缀 /ssm/api/students</span>
+  <a href="demos.jsp">其他模块演示导航 →</a>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>学生列表</h2>
+      <div class="row">
+        <input id="qName" placeholder="姓名（模糊）">
+        <input id="qMajor" placeholder="专业（模糊）">
+        <button class="primary" onclick="search(1)">查询</button>
+        <button onclick="resetQuery()">重置</button>
+        <button class="danger" id="batchDel" onclick="deleteSelected()" disabled>批量删除</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th><input type="checkbox" id="checkAll" onchange="toggleAll(this.checked)" style="height:auto"></th>
+            <th>ID</th><th>姓名</th><th>年龄</th><th>邮箱</th><th>专业</th><th>成绩</th><th>操作</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <span id="pageInfo"></span>
+        <div class="row">
+          <label>每页 <input id="pageSize" type="number" value="5" min="1" max="100" style="width:64px" onchange="search(1)"> 条</label>
+          <button id="prev" onclick="search(state.page - 1)">上一页</button>
+          <button id="next" onclick="search(state.page + 1)">下一页</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 id="formTitle">新增学生</h2>
+      <form class="grid" id="form" onsubmit="save(event)">
+        <input type="hidden" id="fId">
+        <label>姓名 *<input id="fName"></label>
+        <label>年龄<input id="fAge" type="number"></label>
+        <label>邮箱<input id="fEmail"></label>
+        <label>专业<input id="fMajor"></label>
+        <label>成绩<input id="fScore" type="number" step="0.1"></label>
+      </form>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" type="submit" form="form" id="saveBtn">保存</button>
+        <button onclick="resetForm()">清空 / 取消修改</button>
+      </div>
+      <div class="form-msg" id="formMsg"></div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h2>功能验证</h2>
+      <div class="checks">
+        <button onclick="check.emptyName()">空姓名新增<small>期望 400「姓名不能为空」</small></button>
+        <button onclick="check.badScore()">成绩 = -5<small>期望 400「成绩必须在 0~100 之间」</small></button>
+        <button onclick="check.longName()">超长姓名（60 字）<small>期望 400「姓名不能超过 50 个字符」</small></button>
+        <button onclick="check.missing()">查询 / 删除不存在的 ID<small>期望 404「学生不存在」</small></button>
+        <button onclick="check.emptyBatch()">批量删除空数组<small>期望 400「请至少选择一条记录」</small></button>
+        <button onclick="check.pageZero()">分页边界：page=0、size=0<small>期望 400</small></button>
+        <button onclick="check.badJson()">请求体不是合法 JSON<small>期望 400「请求参数格式不正确」</small></button>
+        <button onclick="check.tx()">事务回滚演示<small>插入后抛异常，前后总数应不变</small></button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <h2 style="margin:0">请求日志</h2>
+        <button onclick="logEl.textContent=''">清空</button>
+      </div>
+      <pre id="log"></pre>
+    </div>
+  </aside>
+</main>
+
+<script>
+  const API = 'ssm/api/students';
+  const state = { page: 1, pages: 1, selected: new Set() };
+  const $ = id => document.getElementById(id);
+  const logEl = $('log');
+
+  function esc(v) {
+    return v == null ? '' : String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function log(cls, text) {
+    const line = document.createElement('div');
+    line.className = cls;
+    line.textContent = text;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  /** 统一请求：记录请求与响应，返回 Result 对象 */
+  async function api(method, url, body, rawBody) {
+    log('req', `→ ${method} /${url}` + (body !== undefined ? '  ' + JSON.stringify(body) : rawBody ? '  ' + rawBody : ''));
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: body !== undefined || rawBody ? { 'Content-Type': 'application/json' } : {},
+        body: rawBody || (body !== undefined ? JSON.stringify(body) : undefined)
+      });
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch (e) { json = { code: res.status, message: text.slice(0, 200) }; }
+      log(json.code === 200 ? 'good' : 'bad', `← HTTP ${res.status}  ${JSON.stringify(json)}`);
+      return json;
+    } catch (e) {
+      log('bad', '← 网络错误：' + e.message);
+      return { code: 0, message: '无法连接服务器' };
+    }
+  }
+
+  async function search(page) {
+    const size = parseInt($('pageSize').value, 10) || 5;
+    const params = new URLSearchParams({ page: Math.max(1, page || 1), size });
+    if ($('qName').value.trim()) params.set('name', $('qName').value.trim());
+    if ($('qMajor').value.trim()) params.set('major', $('qMajor').value.trim());
+    const r = await api('GET', `${API}?${params}`);
+    if (r.code !== 200) return;
+    const d = r.data;
+    if (d.records.length === 0 && d.page > 1 && d.page > d.pages) return search(d.pages);
+    state.page = d.page;
+    state.pages = Math.max(1, d.pages);
+    state.selected.clear();
+    $('checkAll').checked = false;
+    render(d.records);
+    $('pageInfo').textContent = `共 ${d.total} 条 · 第 ${d.page} / ${state.pages} 页`;
+    $('prev').disabled = d.page <= 1;
+    $('next').disabled = d.page >= state.pages;
+    updateBatchBtn();
+  }
+
+  function render(rows) {
+    const tbody = $('tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">没有符合条件的学生</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(s => `
+      <tr>
+        <td><input type="checkbox" style="height:auto" data-id="${s.id}" onchange="toggleOne(${s.id}, this.checked)"></td>
+        <td class="num">${s.id}</td><td>${esc(s.name)}</td><td class="num">${esc(s.age)}</td>
+        <td>${esc(s.email)}</td><td>${esc(s.major)}</td><td class="num">${esc(s.score)}</td>
+        <td><button class="link" onclick="edit(${s.id})">编辑</button><button class="link del" onclick="removeOne(${s.id})">删除</button></td>
+      </tr>`).join('');
+  }
+
+  function toggleOne(id, on) { on ? state.selected.add(id) : state.selected.delete(id); updateBatchBtn(); }
+  function toggleAll(on) {
+    document.querySelectorAll('#tbody input[type=checkbox]').forEach(cb => { cb.checked = on; toggleOne(+cb.dataset.id, on); });
+  }
+  function updateBatchBtn() {
+    $('batchDel').disabled = state.selected.size === 0;
+    $('batchDel').textContent = state.selected.size ? `批量删除（${state.selected.size}）` : '批量删除';
+  }
+  function resetQuery() { $('qName').value = ''; $('qMajor').value = ''; search(1); }
+
+  function formData() {
+    const num = v => v === '' ? null : Number(v);
+    return {
+      id: $('fId').value ? Number($('fId').value) : undefined,
+      name: $('fName').value.trim(), age: num($('fAge').value), email: $('fEmail').value.trim(),
+      major: $('fMajor').value.trim(), score: num($('fScore').value)
+    };
+  }
+
+  function showMsg(text, ok) { $('formMsg').textContent = text; $('formMsg').className = 'form-msg ' + (ok ? 'ok' : 'err'); }
+
+  async function save(e) {
+    e.preventDefault();
+    const data = formData();
+    const r = await api(data.id ? 'PUT' : 'POST', API, data);
+    if (r.code === 200) {
+      showMsg(data.id ? '修改成功' : `新增成功，id = ${r.data.id}`, true);
+      resetForm(true);
+      search(data.id ? state.page : state.pages + 1);
+    } else {
+      showMsg(r.message, false);
+    }
+  }
+
+  async function edit(id) {
+    const r = await api('GET', `${API}/${id}`);
+    if (r.code !== 200) return;
+    const s = r.data;
+    $('fId').value = s.id; $('fName').value = s.name || ''; $('fAge').value = s.age ?? '';
+    $('fEmail').value = s.email || ''; $('fMajor').value = s.major || ''; $('fScore').value = s.score ?? '';
+    $('formTitle').textContent = `修改学生（id = ${s.id}）`;
+    $('saveBtn').textContent = '保存修改';
+    $('fName').focus();
+  }
+
+  function resetForm(keepMsg) {
+    $('form').reset(); $('fId').value = '';
+    $('formTitle').textContent = '新增学生'; $('saveBtn').textContent = '保存';
+    if (keepMsg !== true) showMsg('', true);
+  }
+
+  async function removeOne(id) {
+    if (!confirm(`确定删除 id = ${id} 的学生？`)) return;
+    const r = await api('DELETE', `${API}/${id}`);
+    if (r.code === 200) search(state.page);
+  }
+
+  async function deleteSelected() {
+    const ids = [...state.selected];
+    if (!confirm(`确定删除选中的 ${ids.length} 条记录？`)) return;
+    const r = await api('DELETE', API, ids);
+    if (r.code === 200) search(state.page);
+  }
+
+  const check = {
+    emptyName: () => api('POST', API, { name: '', age: 20 }),
+    badScore: () => api('POST', API, { name: '测试', score: -5 }),
+    longName: () => api('POST', API, { name: '长'.repeat(60) }),
+    missing: async () => { await api('GET', `${API}/999999`); await api('DELETE', `${API}/999999`); },
+    emptyBatch: () => api('DELETE', API, []),
+    pageZero: async () => { await api('GET', `${API}?page=0&size=5`); await api('GET', `${API}?page=1&size=0`); },
+    badJson: () => api('POST', API, undefined, '{name: oops'),
+    tx: async () => {
+      const r = await api('POST', `${API}/tx-demo`);
+      if (r.code === 200) {
+        const d = r.data;
+        log(d.before === d.after ? 'good' : 'bad',
+          `   调用前 ${d.before} 条，调用后 ${d.after} 条 → ${d.before === d.after ? '已回滚 ✓' : '未回滚 ✗'}`);
+      }
+    }
+  };
+
+  search(1);
+</script>
+</body>
+</html>

@@ -204,7 +204,7 @@
 </div>
 
 <p style="color:#666; margin-top: 30px;">
-    <a href="<%= ctx %>/index.jsp">← 返回首页</a>
+    <a href="<%= ctx %>/demos.jsp">← 返回演示导航</a>
 </p>
 
 </body>

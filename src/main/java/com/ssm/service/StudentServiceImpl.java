@@ -59,4 +59,26 @@ public class StudentServiceImpl implements StudentService {
     public void deleteById(Integer id) {
         studentMapper.deleteById(id);
     }
+
+    @Override
+    public List<Student> search(String name, String major, int page, int size) {
+        return studentMapper.selectPage(name, major, (page - 1) * size, size);
+    }
+
+    @Override
+    public long count(String name, String major) {
+        return studentMapper.count(name, major);
+    }
+
+    @Override
+    @Transactional
+    public boolean updateStudent(Student student) {
+        return studentMapper.updateById(student) > 0;
+    }
+
+    @Override
+    @Transactional
+    public int deleteByIds(List<Integer> ids) {
+        return studentMapper.deleteByIds(ids);
+    }
 }

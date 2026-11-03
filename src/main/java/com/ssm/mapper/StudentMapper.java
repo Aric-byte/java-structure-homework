@@ -26,4 +26,12 @@ public interface StudentMapper {
     int updateById(Student student);
 
     int deleteById(@Param("id") Integer id);
+
+    /** 多条件模糊 + 分页（动态 SQL，见 StudentMapper.xml） */
+    List<Student> selectPage(@Param("name") String name, @Param("major") String major,
+                             @Param("offset") int offset, @Param("size") int size);
+
+    long count(@Param("name") String name, @Param("major") String major);
+
+    int deleteByIds(@Param("ids") List<Integer> ids);
 }

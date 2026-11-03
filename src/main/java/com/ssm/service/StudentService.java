@@ -26,4 +26,12 @@ public interface StudentService {
     void addThenFail(Student student);
 
     void deleteById(Integer id);
+
+    List<Student> search(String name, String major, int page, int size);
+
+    long count(String name, String major);
+
+    boolean updateStudent(Student student);
+
+    int deleteByIds(List<Integer> ids);
 }
