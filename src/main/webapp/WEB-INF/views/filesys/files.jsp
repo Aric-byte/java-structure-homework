@@ -41,7 +41,10 @@
     </div>
 
     <div class="card">
-        <h2>我的提交</h2>
+        <div class="row" style="justify-content:space-between;margin-bottom:12px">
+            <h2 style="margin:0">我的提交</h2>
+            <a href="<c:url value='/filesys/files/trash'/>">回收站 →</a>
+        </div>
         <div class="tabs">
             <c:url var="allUrl" value="/filesys/files"/>
             <a href="${allUrl}" class="${empty category ? 'on' : ''}">全部</a>
@@ -99,7 +102,7 @@
                                         </c:otherwise>
                                     </c:choose>
                                     <form method="post" action="<c:url value='/filesys/files/${f.id}/delete'/>"
-                                          onsubmit="return confirm('确定删除该文件？')">
+                                          onsubmit="return confirm('移入回收站？之后可在回收站恢复或彻底删除。')">
                                         <button class="link danger" type="submit">删除</button>
                                     </form>
                                 </td>

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 作业提交：列表 / 上传 / 下载 / 冻结 / 删除。
+ * 作业提交：列表 / 上传 / 下载 / 冻结 / 删除（逻辑删除进回收站）/ 回收站恢复与彻底删除。
  * 当前用户一律从 session 取（@SessionAttribute），不信任请求参数里的用户信息。
  */
 @Controller
@@ -124,15 +124,44 @@ public class FileController {
     public String delete(@PathVariable Integer id,
                          @SessionAttribute(LoginInterceptor.SESSION_USER_ID) Integer userId,
                          RedirectAttributes redirect) {
-        return changeState(redirect, () -> "已删除：" + fileService.delete(id, userId).getOriginName());
+        return changeState(redirect, () -> "已移入回收站：" + fileService.delete(id, userId).getOriginName()
+                + "（可在回收站恢复或彻底删除）");
+    }
+
+    /** 回收站：当前用户逻辑删除的文件 */
+    @GetMapping("/trash")
+    public String trash(@SessionAttribute(LoginInterceptor.SESSION_USER_ID) Integer userId, Model model) {
+        model.addAttribute("files", fileService.listTrash(userId));
+        return "trash";
+    }
+
+    @PostMapping("/{id}/restore")
+    public String restore(@PathVariable Integer id,
+                          @SessionAttribute(LoginInterceptor.SESSION_USER_ID) Integer userId,
+                          RedirectAttributes redirect) {
+        return changeState(redirect, "redirect:/filesys/files/trash",
+                () -> "已恢复：" + fileService.restore(id, userId).getOriginName());
+    }
+
+    /** 彻底删除：数据库记录与磁盘文件一起删除，不可恢复 */
+    @PostMapping("/{id}/purge")
+    public String purge(@PathVariable Integer id,
+                        @SessionAttribute(LoginInterceptor.SESSION_USER_ID) Integer userId,
+                        RedirectAttributes redirect) {
+        return changeState(redirect, "redirect:/filesys/files/trash",
+                () -> "已彻底删除：" + fileService.purge(id, userId).getOriginName() + "（记录与磁盘文件均已删除）");
     }
 
     private String changeState(RedirectAttributes redirect, java.util.function.Supplier<String> action) {
+        return changeState(redirect, "redirect:/filesys/files", action);
+    }
+
+    private String changeState(RedirectAttributes redirect, String view, java.util.function.Supplier<String> action) {
         try {
             redirect.addFlashAttribute("success", action.get());
         } catch (FileAccessException e) {
             redirect.addFlashAttribute("errors", List.of(e.getMessage()));
         }
-        return "redirect:/filesys/files";
+        return view;
     }
 }

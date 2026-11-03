@@ -12,9 +12,13 @@ public interface FileInfoMapper {
 
     List<FileInfo> findByUploader(@Param("uploaderId") Integer uploaderId, @Param("category") String category);
 
+    List<FileInfo> findDeletedByUploader(@Param("uploaderId") Integer uploaderId);
+
     FileInfo findById(@Param("id") Integer id);
 
     int updateStatus(@Param("id") Integer id, @Param("status") int status);
 
     int incrementDownloadCount(@Param("id") Integer id);
+
+    int deleteById(@Param("id") Integer id);
 }

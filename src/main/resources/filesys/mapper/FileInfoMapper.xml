@@ -26,6 +26,14 @@
         ORDER BY create_time DESC, id DESC
     </select>
 
+    <!-- 回收站：当前用户已逻辑删除（status = 0）的记录 -->
+    <select id="findDeletedByUploader" resultType="com.filesys.entity.FileInfo">
+        SELECT <include refid="columns"/>
+        FROM file_info
+        WHERE uploader_id = #{uploaderId} AND status = 0
+        ORDER BY create_time DESC, id DESC
+    </select>
+
     <!-- 下载、冻结、删除都先按 ID 取记录，再在 Service 中校验归属 -->
     <select id="findById" resultType="com.filesys.entity.FileInfo">
         SELECT <include refid="columns"/> FROM file_info WHERE id = #{id}
@@ -38,4 +46,9 @@
     <update id="incrementDownloadCount">
         UPDATE file_info SET download_count = download_count + 1 WHERE id = #{id}
     </update>
+
+    <!-- 彻底删除（物理删除）：记录从表中移除，磁盘文件由 Service 同步删除 -->
+    <delete id="deleteById">
+        DELETE FROM file_info WHERE id = #{id}
+    </delete>
 </mapper>

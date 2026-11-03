@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  *
  * 上传三要点：大小校验、类型（扩展名白名单）校验、安全重命名（UUID）。
  * 下载三要点：按数据库 ID 取路径（不拼接用户输入）、归属校验、路径必须落在上传根目录内。
+ * 删除分两级：delete 逻辑删除（进回收站，可 restore 恢复）→ purge 彻底删除（记录 + 磁盘文件）。
  */
 @Service
 public class FileService {
@@ -131,7 +132,7 @@ public class FileService {
         return info;
     }
 
-    /** 逻辑删除：status 置 0，列表不再显示，磁盘文件保留 */
+    /** 逻辑删除（移入回收站）：status 置 0，列表不再显示，记录和磁盘文件都保留，可恢复 */
     @Transactional
     public FileInfo delete(Integer fileId, Integer userId) {
         FileInfo info = requireOwned(fileId, userId);
@@ -139,10 +140,61 @@ public class FileService {
         return info;
     }
 
+    public List<FileInfo> listTrash(Integer userId) {
+        return fileInfoMapper.findDeletedByUploader(userId);
+    }
+
+    /** 从回收站恢复：status 置回 1（正常） */
+    @Transactional
+    public FileInfo restore(Integer fileId, Integer userId) {
+        FileInfo info = requireOwnedInTrash(fileId, userId);
+        fileInfoMapper.updateStatus(fileId, FileInfo.STATUS_NORMAL);
+        return info;
+    }
+
+    /**
+     * 彻底删除（物理删除）：删除 file_info 记录 + 磁盘文件，不可恢复。
+     * 只允许对回收站里的文件操作（先逻辑删除、再彻底删除），防止误删。
+     *
+     * 顺序：先删记录、再删磁盘文件，两步在同一个事务里——
+     *   磁盘文件删除失败时抛异常，事务回滚，记录仍在回收站，可以重试；
+     *   磁盘文件本来就不存在（已被手动清理）时视为成功，只删记录。
+     * download_log 中的历史下载记录保留，作为操作审计。
+     */
+    @Transactional
+    public FileInfo purge(Integer fileId, Integer userId) {
+        FileInfo info = requireOwnedInTrash(fileId, userId);
+        fileInfoMapper.deleteById(fileId);
+        Path path = resolveInsideRoot(info.getFilePath());
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new FileAccessException("「" + info.getOriginName() + "」磁盘文件删除失败（可能正被占用），请稍后重试");
+        }
+        return info;
+    }
+
     /** 归属校验：不存在、已删除、不属于当前用户都拒绝（他人文件统一提示"无权访问"） */
     private FileInfo requireOwned(Integer fileId, Integer userId) {
+        FileInfo info = findOwned(fileId, userId);
+        if (info.getStatus() == FileInfo.STATUS_DELETED) {
+            throw new FileAccessException("文件不存在或已被删除");
+        }
+        return info;
+    }
+
+    /** 回收站操作的归属校验：只接受当前用户已逻辑删除的文件 */
+    private FileInfo requireOwnedInTrash(Integer fileId, Integer userId) {
+        FileInfo info = findOwned(fileId, userId);
+        if (info.getStatus() != FileInfo.STATUS_DELETED) {
+            throw new FileAccessException("「" + info.getOriginName() + "」不在回收站中，请先删除再操作");
+        }
+        return info;
+    }
+
+    private FileInfo findOwned(Integer fileId, Integer userId) {
         FileInfo info = fileId == null ? null : fileInfoMapper.findById(fileId);
-        if (info == null || info.getStatus() == FileInfo.STATUS_DELETED) {
+        if (info == null) {
             throw new FileAccessException("文件不存在或已被删除");
         }
         if (!info.getUploaderId().equals(userId)) {
