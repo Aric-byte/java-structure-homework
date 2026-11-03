@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd
+           http://www.springframework.org/schema/aop
+           http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <context:property-placeholder location="classpath:common/db.properties"/>
+
+<!--Spring的数据库连接池配置 使用个第三方的数据库连接池 HikariCP 此处可以使用Spring的标准数据源 SpringFramework.jdbc.datasource.DataSource-->
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maximumPoolSize" value="10"/>
+        <property name="minimumIdle" value="5"/>
+        <property name="connectionTimeout" value="30000"/>
+        <property name="idleTimeout" value="600000"/>
+        <property name="maxLifetime" value="1800000"/>
+    </bean>
+
+    <!--mybatis的SessionFactory配置-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/> <!--注入数据库连接池-->
+        <property name="configLocation" value="classpath:springdao/mybatis-config.xml"/>
+        <!--注入 MyBatis 总体设置配置文件 全局mybatis的文件的注入-->
+        <property name="mapperLocations" value="classpath:springdao/**/*Mapper.xml"/>
+        <!--注入 Mapper 映射文件 特指如果继续使用mapper文件-->
+        <!-- 只能指向具体子包：com.Spring.dao 下 xml/annotation 两套同名类（User、UserServiceImpl 等），
+             扫父包会导致 MyBatis 按简单类名注册别名时冲突 -->
+        <property name="typeAliasesPackage" value="com.Spring.dao.xml"/>
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.Spring.dao.xml"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+    <!--以上的操作 均为 MyBatis和 Spring 相关的配置-->
+
+
+    <!--使用Springde IOC机制 创建一个Service层的Bean-->
+    <bean id="userService" class="com.Spring.dao.xml.UserServiceImpl">
+        <property name="userMapper" ref="userMapper"/>
+    </bean>
+
+
+
+    <!--使用Spring 创建一个事务管理器的Bean  采用的就是一个Aop的方式的管理-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+    <!--注入事务管理器 aop的操作的切面-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="find*" read-only="true"/>
+            <tx:method name="registerUser" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="transferPoints" rollback-for="Exception" isolation="READ_COMMITTED"/>
+            <tx:method name="batchInsertWithTransaction" rollback-for="Exception"/>
+            <tx:method name="*" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+    <!--
+            Aop的事务的传播行为和数据库隔离级别
+            propagation: 传播行为
+                        传播行为的取值：REQUIRED, REQUIRED_NEW, SUPPORTS, NOT_SUPPORTED, MANDATORY, NEVER, NESTED
+                        传播行为的默认值：REQUIRED
+                        REQUIRED: 必须在事务中执行，如果当前没有事务中执行
+                        REQUIRED_NEW: 必须在事务中执行，如果当前有事务中执行，就挂起当前事务，创建新的事务
+                        SUPPORTS: 支持事务，如果当前有事务中执行，就继续执行当前事务，如果没有事务中执行，就继续执行
+                        NOT_SUPPORTED: 不支持事务，如果当前有事务中执行，就挂起当前事务，继续执行
+                        MANDATORY: 必须在事务中执行，如果当前没有事务中执行，就抛出异常
+                        NEVER: 不支持事务，如果当前有事务中执行，就挂起当前事务，继续执行
+                        NESTED: 嵌套事务，如果当前有事务中执行，就创建新的事务，继续执行
+            isolation: 数据库隔离级别
+                        数据库隔离级别的取值：READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE
+                        数据库隔离级别的默认值：READ_COMMITTED
+                        READ_UNCOMMITTED: 读取未提交的数据，可能会导致脏读
+                        READ_COMMITTED: 读取已提交的数据，不会导致脏读
+                        REPEATABLE_READ: 重复读取，不会导致幻读
+                        SERIALIZABLE: 串行读取，不会导致幻读
+    -->
+
+
+    <aop:config>
+        <aop:pointcut id="servicePointcut"
+                      expression="execution(* com.Spring.dao.xml.*Service*.*(..))"/>
+        <!--定义切点 ,并且进行织入操作-->
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="servicePointcut"/>
+    </aop:config>
+
+</beans>

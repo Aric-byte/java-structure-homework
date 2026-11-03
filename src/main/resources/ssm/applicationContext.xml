@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--
+      ============================================================
+      SSM 整合 —— 父容器（业务层 + 持久层）
+      ============================================================
+      由 web.xml 的 ContextLoaderListener 启动（全局唯一，Web 容器关闭才销毁）；
+      SpringMVC 子容器（spring-mvc.xml）可以访问父容器的 Bean，反之不行。
+
+      整合四件套（本文件核心）：
+      ① DataSource            —— HikariCP 连接池
+      ② SqlSessionFactoryBean  —— mybatis-spring 桥接：工厂交给 Spring 管理
+      ③ MapperScannerConfigurer —— 扫描 Mapper 接口 → 生成代理 Bean
+      ④ 事务管理器 + tx:annotation-driven —— 支撑 @Transactional
+    -->
+
+    <!-- 数据库连接参数（与 Spring/dao 模块共用同一份 db.properties） -->
+    <context:property-placeholder location="classpath:common/db.properties"/>
+
+    <!-- Service 层扫描：Controller 留给子容器（ssm/spring-mvc.xml）扫 -->
+    <context:component-scan base-package="com.ssm.service"/>
+
+    <!-- ① 连接池 -->
+    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maximumPoolSize" value="10"/>
+        <property name="minimumIdle" value="5"/>
+    </bean>
+
+    <!-- ② MyBatis 核心工厂：不再手写 SqlSessionFactoryBuilder.build()，
+            Spring 启动时自动构建；mapperLocations 指向本模块的 SQL 文件 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations" value="classpath:ssm/mapper/*.xml"/>
+        <property name="typeAliasesPackage" value="com.ssm.entity"/>
+    </bean>
+
+    <!-- ③ Mapper 扫描：com.ssm.mapper 下每个接口 → 一个代理 Bean（无需实现类） -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.ssm.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!-- ④ 事务：Spring 事务管理器接管 MyBatis（本质是接管 SqlSession 的提交/回滚） -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 开启 @Transactional 注解事务（对比 Spring/dao 模块的 XML 式 tx:advice） -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+</beans>

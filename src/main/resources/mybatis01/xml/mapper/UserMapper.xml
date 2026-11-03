@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mybatis01.xml.UserMapper">
+
+    <select id="findAll" resultType="com.mybatis01.entity.User">
+        SELECT * FROM user
+    </select>
+
+    <select id="findById" parameterType="java.lang.Integer" resultType="com.mybatis01.entity.User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <select id="findByUsername" parameterType="java.lang.String" resultType="com.mybatis01.entity.User">
+        SELECT * FROM user WHERE username LIKE CONCAT('%', #{username}, '%')
+    </select>
+
+    <select id="findByMap" parameterType="Map" resultType="com.mybatis01.entity.User">
+        SELECT * FROM user WHERE password = #{password} OR username = #{username}
+    </select>
+
+    <select id="findCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM user
+    </select>
+
+    <insert id="insert" parameterType="com.mybatis01.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user(username, password, email)
+        VALUES(#{username}, #{password}, #{email})
+    </insert>
+
+    <update id="updateById" parameterType="com.mybatis01.entity.User">
+        UPDATE user
+        SET username = #{username},
+            password = #{password},
+            email = #{email}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        DELETE FROM user WHERE id = #{id}
+    </delete>
+
+</mapper>

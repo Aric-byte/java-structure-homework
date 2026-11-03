@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--这是一个Spring的核心文件,理解成为Spring的容器
+        1.使用Bean标签 进行类-实例的声明
+        2.声明实例 id和name的作用是一样的 ,但在容器中 id/name的取值应是唯一的
+
+    -->
+    <!--管理一个car的实例 预先定义car 最简单的对象的创建-->
+    <bean id="car" class="com.Spring.Ioc.xml.Car">
+
+    </bean>
+    <bean name="car1" class="com.Spring.Ioc.xml.Car">
+
+    </bean>
+
+
+    <!-- ============ Wheel: 被引用的 Bean ============ -->
+
+    <bean id="wheelSingleton" class="com.Spring.Ioc.xml.Wheel">
+        <property name="type" value="米其林"/>
+        <property name="size" value="17"/>
+    </bean>
+
+    <bean id="wheelPrototype" class="com.Spring.Ioc.xml.Wheel" scope="prototype">
+        <property name="type" value="固特异"/>
+        <property name="size" value="18"/>
+    </bean>
+
+    <!-- ============ 1. 无参构造 + Setter 注入值类型 ============ -->
+
+    <bean id="carBySetter" class="com.Spring.Ioc.xml.Car">
+        <property name="brand" value="比亚迪"/>
+        <property name="model" value="秦PLUS"/>
+        <property name="price" value="128000"/>
+        <!--对实例中的简单的属性 进行赋值-->
+    </bean>
+
+    <!-- ============ 2. 构造器注入值类型 ============ -->
+
+    <bean id="carByConstructor" class="com.Spring.Ioc.xml.Car">
+        <constructor-arg value="特斯拉"/>
+        <constructor-arg value="Model 3"/>
+        <constructor-arg value="259900"/>
+        <constructor-arg ref="wheelPrototype"/>
+    </bean>
+
+    <!-- ============ 3. Setter + ref 注入引用类型 ============ -->
+
+    <bean id="carWithWheelRef" class="com.Spring.Ioc.xml.Car">
+        <property name="brand" value="宝马"/>
+        <property name="model" value="3系"/>
+        <property name="price" value="320000"/>
+        <property name="wheel" ref="wheelSingleton"/>
+    </bean>
+
+    <!-- ============ 4. 内部 Bean (inner bean) ============ -->
+
+    <bean id="carWithInnerWheel" class="com.Spring.Ioc.xml.Car">
+        <property name="brand" value="奔驰"/>
+        <property name="model" value="C级"/>
+        <property name="price" value="350000"/>
+        <property name="wheel">
+            <bean class="com.Spring.Ioc.xml.Wheel">
+                <property name="type" value="马牌"/>
+                <property name="size" value="19"/>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- ============ 5. 构造器 + index + ref ============ -->
+
+    <bean id="carFullConstructor" class="com.Spring.Ioc.xml.Car">
+        <constructor-arg index="0" value="奥迪"/>
+        <constructor-arg index="1" value="A4L"/>
+        <constructor-arg index="2" value="300000"/>
+        <constructor-arg index="3" ref="wheelPrototype"/>
+    </bean>
+
+    <!-- ============ 6. 集合属性注入 ============ -->
+
+    <bean id="personRich" class="com.Spring.Ioc.xml.Person">
+        <property name="name" value="张三"/>
+        <property name="age" value="25"/>
+
+        <property name="hobbies"> <!--数组注入等同于list方法-->
+            <list>
+                <value>游泳</value>
+                <value>编程</value>
+                <value>读书</value>
+            </list>
+
+        </property>
+
+        <property name="skills">
+            <set>
+                <value>Java</value>
+                <value>Spring</value>
+                <value>MyBatis</value>
+                <value>Java</value>
+            </set>
+        </property>
+
+        <property name="scores">
+            <map>
+                <entry key="语文" value="85.5" />
+                <entry key="数学" value="92.0"/>
+                 <entry key="英语"  value="88.5"/>
+            </map>
+        </property>
+
+        <property name="healthInfo">
+            <props>
+                <prop key="height">175cm</prop>
+                <prop key="weight">70kg</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- ============ 7. Bean 生命周期 比较重要的地方 ============ -->
+
+    <bean id="carLifecycle" class="com.Spring.Ioc.xml.Car"
+          init-method="customInit"
+          destroy-method="customDestroy">
+        <constructor-arg value="保时捷"/>
+        <constructor-arg value="911"/>
+        <constructor-arg value="1500000"/>
+    </bean>
+
+    <!--
+        生命周期的使用:
+            1. 复用和单例  scope=prototype 或者singleton
+            prototype:每次的请求 容器都会创建一个新的实例
+            singleton:容器会创建一个单例的实例 ,重复的使用
+            2.scope的取值范围:prototype/singleton 还有网络中的其他值
+
+            3. init-method:初始化方法
+            destroy-method:销毁方法 容器的关闭的时候调用
+                操作的前提: 了解实例的创建的顺序 构造方法 -> setter方法 -> 初始化方法
+
+
+
+        -->
+</beans>
+

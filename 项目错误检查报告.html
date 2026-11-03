@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目错误检查报告 — SpringSpringMVCMybatis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.7;
+            padding: 20px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 32px 40px;
+        }
+        .header h1 { font-size: 26px; margin-bottom: 8px; }
+        .header .meta { font-size: 14px; opacity: 0.85; }
+        .header .meta span { margin-right: 20px; }
+
+        .summary-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-item {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            border-right: 1px solid #e0e0e0;
+        }
+        .summary-item:last-child { border-right: none; }
+        .summary-item .num { font-size: 32px; font-weight: 700; }
+        .summary-item .label { font-size: 13px; color: #666; margin-top: 4px; }
+        .num.green { color: #52c41a; }
+        .num.red { color: #f5222d; }
+        .num.orange { color: #fa8c16; }
+        .num.blue { color: #1890ff; }
+
+        .content { padding: 32px 40px; }
+
+        .section { margin-bottom: 36px; }
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .badge.fixed { background: #52c41a; }
+        .badge.error { background: #f5222d; }
+        .badge.warning { background: #fa8c16; }
+        .badge.info { background: #1890ff; }
+
+        .card {
+            background: #fafafa;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card.error-card { border-left: 4px solid #f5222d; }
+        .card.fixed-card { border-left: 4px solid #52c41a; }
+        .card.warning-card { border-left: 4px solid #fa8c16; }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .file-list {
+            list-style: none;
+            margin: 8px 0;
+        }
+        .file-list li {
+            padding: 4px 0;
+            font-size: 13px;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            color: #555;
+        }
+        .file-list li::before {
+            content: "📄 ";
+        }
+        .fix-box {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .fix-box strong { color: #1890ff; }
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            font-family: "Consolas", "Monaco", "Courier New", monospace;
+            font-size: 12.5px;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .code-block .del { color: #f5222d; text-decoration: line-through; }
+        .code-block .add { color: #52c41a; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th { background: #f0f0f0; font-weight: 600; }
+        tr:nth-child(even) { background: #fafafa; }
+
+        .footer {
+            padding: 20px 40px;
+            background: #fafafa;
+            border-top: 1px solid #e0e0e0;
+            font-size: 13px;
+            color: #999;
+            text-align: center;
+        }
+        .action-btn {
+            display: inline-block;
+            background: #1890ff;
+            color: #fff;
+            padding: 8px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>项目错误检查报告</h1>
+            <div class="meta">
+                <span>项目：SpringSpringMVCMybatis</span>
+                <span>技术栈：Spring 6.1.2 + SpringMVC + MyBatis 3.5.13</span>
+                <span>检查时间：2026-07-07</span>
+            </div>
+        </div>
+
+        <div class="summary-bar">
+            <div class="summary-item">
+                <div class="num green">1</div>
+                <div class="label">已修复问题</div>
+            </div>
+            <div class="summary-item">
+                <div class="num red">6</div>
+                <div class="label">待修复错误类别</div>
+            </div>
+            <div class="summary-item">
+                <div class="num orange">~19</div>
+                <div class="label">涉及文件数</div>
+            </div>
+            <div class="summary-item">
+                <div class="num red">100</div>
+                <div class="label">编译错误总数</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 已修复 -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge fixed">已修复</span>
+                    UTF-8 BOM 编码问题（15 个文件）
+                </div>
+                <div class="card fixed-card">
+                    <div class="card-title">问题：15 个 Java 文件开头包含 UTF-8 BOM（EF BB BF），导致 javac 报 "illegal character: '\ufeff'"</div>
+                    <p style="font-size: 13px; color: #666;">已通过 PowerShell 脚本批量去除 BOM 字节，修复后编译不再出现 BOM 相关错误。</p>
+                    <ul class="file-list">
+                        <li>com/mapper/EmpMapper.java, DeptMapper.java, BaseUserMapper.java</li>
+                        <li>com/entity/User.java, Dept.java, Emp.java</li>
+                        <li>com/chapter01/UserMapper.java, UserMapperAnnotation.java</li>
+                        <li>com/chapter02/UserMapper.java, UserMapperAnnotation.java</li>
+                        <li>com/chapter03/UserMapper.java</li>
+                        <li>com/chapter04/DeptMapper.java, EmpMapper.java</li>
+                        <li>com/chapter05/Chapter05DeptMapper.java, Chapter05EmpMapper.java</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 错误1: javax.servlet -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge error">错误 1</span>
+                    javax.servlet → jakarta.servlet 迁移（7 个文件，~20 个编译错误）
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">根因：项目使用 Spring 6 + Jakarta EE 9+（pom.xml 中为 jakarta.servlet-api），但部分章节代码仍使用旧的 javax.servlet 包</div>
+                    <table>
+                        <thead>
+                            <tr><th>文件</th><th>行号</th><th>错误内容</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>chapter08/interceptor/AuthInterceptor.java</td><td>5-7, 26-27</td><td>javax.servlet.http.*</td></tr>
+                            <tr><td>chapter08/interceptor/LoginInterceptor.java</td><td>6-8, 26-27, 56-57, 72-73</td><td>javax.servlet.http.*</td></tr>
+                            <tr><td>chapter08/controller/UserController.java</td><td>11-12, 60, 227</td><td>javax.servlet.http.*</td></tr>
+                            <tr><td>chapter08/controller/ProductController.java</td><td>7</td><td>javax.servlet.http.Cookie</td></tr>
+                            <tr><td>chapter08/exception/GlobalExceptionHandler.java</td><td>9, 26, 41, 56</td><td>javax.servlet.http.HttpServletRequest</td></tr>
+                            <tr><td>chapter10/initializer/WebAppInitializer.java</td><td>8-10, 49, 60</td><td>javax.servlet.Filter/ServletContext/ServletException</td></tr>
+                            <tr><td>chapter11/config/WebAppInitializer.java</td><td>49, 51</td><td>javax.servlet.Filter（内联全限定名）</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="fix-box">
+                        <strong>修复方案：</strong>将所有 <code>javax.servlet</code> 替换为 <code>jakarta.servlet</code>
+                        <div class="code-block"><span class="del">import javax.servlet.http.HttpServletRequest;</span>
+<span class="add">import jakarta.servlet.http.HttpServletRequest;</span></div>
+                        <div class="code-block"><span class="del">import javax.servlet.Filter;</span>
+<span class="add">import jakarta.servlet.Filter;</span></div>
+                        <div class="code-block"><span class="del">protected javax.servlet.Filter[] getServletFilters()</span>
+<span class="add">protected jakarta.servlet.Filter[] getServletFilters()</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误2: javax.validation -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge error">错误 2</span>
+                    javax.validation → jakarta.validation 迁移（6 个文件，~30 个编译错误）
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">根因：pom.xml 使用 jakarta.validation-api 3.0.2 + Hibernate Validator 8.0（Jakarta EE），但 chapter09 代码仍引用 javax.validation 包</div>
+                    <table>
+                        <thead>
+                            <tr><th>文件</th><th>行号</th><th>错误内容</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>chapter09/controller/DeptRestController.java</td><td>9, 60, 77-78, 93-95, 115, 132</td><td>javax.validation.constraints.* (NotNull, Min, NotBlank, Size)</td></tr>
+                            <tr><td>chapter09/controller/UserRestController.java</td><td>13-14, 199</td><td>javax.validation.* / javax.validation.constraints.NotNull</td></tr>
+                            <tr><td>chapter09/dto/UserUpdateDTO.java</td><td>7, 24, 36</td><td>javax.validation.constraints.* (NotNull, Email)</td></tr>
+                            <tr><td>chapter09/dto/UserAddDTO.java</td><td>8</td><td>javax.validation.constraints.*</td></tr>
+                            <tr><td>chapter09/exception/GlobalExceptionHandler.java</td><td>20-22, 66, 200</td><td>javax.validation.* (ConstraintViolation, ConstraintViolationException, Path)</td></tr>
+                            <tr><td>chapter09/validation/UserValidationTest.java</td><td>14-16, 36</td><td>javax.validation.* (Validator, Validation, ConstraintViolation)</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="fix-box">
+                        <strong>修复方案：</strong>将所有 <code>javax.validation</code> 替换为 <code>jakarta.validation</code>
+                        <div class="code-block"><span class="del">import javax.validation.constraints.NotNull;</span>
+<span class="add">import jakarta.validation.constraints.NotNull;</span></div>
+                        <div class="code-block"><span class="del">import javax.validation.ConstraintViolationException;</span>
+<span class="add">import jakarta.validation.ConstraintViolationException;</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误3: HikariCP -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge error">错误 3</span>
+                    HikariCP 依赖缺失（1 个文件，2 个编译错误）
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">chapter11/config/JdbcConfig.java — 引用了 com.zaxxer.hikari.HikariConfig / HikariDataSource，但 pom.xml 中未声明 HikariCP 依赖</div>
+                    <div class="fix-box">
+                        <strong>修复方案 A（推荐）：</strong>在 pom.xml 中添加 HikariCP 依赖
+                        <div class="code-block">&lt;dependency&gt;
+    &lt;groupId&gt;com.zaxxer&lt;/groupId&gt;
+    &lt;artifactId&gt;HikariCP&lt;/artifactId&gt;
+    &lt;version&gt;5.1.0&lt;/version&gt;
+&lt;/dependency&gt;</div>
+                        <strong>修复方案 B：</strong>改用项目已有的 Druid 连接池（pom.xml 已声明 druid 1.2.20），修改 JdbcConfig 使用 DruidDataSource
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误4: jackson-datatype-jsr310 -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge error">错误 4</span>
+                    jackson-datatype-jsr310 依赖缺失（1 个文件，1 个编译错误）
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">chapter11/config/SpringMvcConfig.java — 第 13 行引用 com.fasterxml.jackson.datatype.jsr310.JavaTimeModule，但 pom.xml 只有 jackson-databind，缺少 jsr310 模块</div>
+                    <div class="fix-box">
+                        <strong>修复方案：</strong>在 pom.xml 中添加 jackson-datatype-jsr310 依赖
+                        <div class="code-block">&lt;dependency&gt;
+    &lt;groupId&gt;com.fasterxml.jackson.datatype&lt;/groupId&gt;
+    &lt;artifactId&gt;jackson-datatype-jsr310&lt;/artifactId&gt;
+    &lt;version&gt;2.17.0&lt;/version&gt;
+&lt;/dependency&gt;</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误5: 测试类在main -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge error">错误 5</span>
+                    测试类放在 main 源码目录中（5 个文件，~25 个编译错误）
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">根因：JUnit 5（junit-jupiter-api）和 Spring Test（spring-test）在 pom.xml 中声明为 &lt;scope&gt;test&lt;/scope&gt;，仅在 src/test/java 下可用。但这些测试类被放在 src/main/java 下，编译 main 时找不到这些依赖</div>
+                    <table>
+                        <thead>
+                            <tr><th>文件</th><th>使用的 test 依赖</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>chapter07/AopTest.java</td><td>org.junit.jupiter.api.*, org.springframework.test.context.*</td></tr>
+                            <tr><td>chapter07/TransactionTest.java</td><td>org.junit.jupiter.api.*, org.springframework.test.context.*</td></tr>
+                            <tr><td>chapter09/validation/UserValidationTest.java</td><td>org.junit.jupiter.api.*, javax.validation.*</td></tr>
+                            <tr><td>chapter11/test/EmpServiceTest.java</td><td>org.junit.jupiter.api.*, org.springframework.test.context.*</td></tr>
+                            <tr><td>chapter11/test/EmpMapperTest.java</td><td>org.junit.jupiter.api.*, org.springframework.test.context.*</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="fix-box">
+                        <strong>修复方案 A（推荐）：</strong>将这些文件移动到 <code>src/test/java/</code> 下对应包路径
+                        <div class="code-block">src/main/java/com/chapter07/AopTest.java
+  → src/test/java/com/chapter07/AopTest.java</div>
+                        <strong>修复方案 B：</strong>将 spring-test 和 junit-jupiter-api 的 scope 改为 compile（不推荐，会污染生产依赖）
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误6: 代码错误 -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge error">错误 6</span>
+                    代码编写错误（2 个文件，3 个编译错误 + 1 个运行时隐患）
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">6a. chapter04/EmpMapper.java — 缺少 Dept 类导入 + @Many select 路径错误</div>
+                    <ul class="file-list">
+                        <li>第 107 行：返回类型 <code>Dept</code> 未导入 — 需添加 <code>import com.entity.Dept;</code></li>
+                        <li>第 105 行（运行时隐患）：<code>@Many(select = "com.chapter04.mapper.EmpMapper.findByDeptno")</code> 包路径错误，实际包为 <code>com.chapter04</code>，应为 <code>"com.chapter04.EmpMapper.findByDeptno"</code></li>
+                    </ul>
+                    <div class="fix-box">
+                        <div class="code-block"><span class="add">import com.entity.Dept;</span>  // 在 import 区域添加
+
+<span class="del">many = @Many(select = "com.chapter04.mapper.EmpMapper.findByDeptno")</span>
+<span class="add">many = @Many(select = "com.chapter04.EmpMapper.findByDeptno")</span></div>
+                    </div>
+                </div>
+                <div class="card error-card">
+                    <div class="card-title">6b. chapter09/exception/GlobalExceptionHandler.java — 错误的 import 路径 + 不存在的类</div>
+                    <ul class="file-list">
+                        <li>第 10 行：<code>org.springframework.validation.MethodArgumentNotValidException</code> — 该类在 Spring 6 中位于 <code>org.springframework.web.bind</code> 包</li>
+                        <li>第 12 行：<code>org.springframework.web.bind.MethodArgumentMissingRequestParamException</code> — Spring 中不存在此类，且未在文件中使用，应直接删除</li>
+                    </ul>
+                    <div class="fix-box">
+                        <div class="code-block"><span class="del">import org.springframework.validation.MethodArgumentNotValidException;</span>
+<span class="add">import org.springframework.web.bind.MethodArgumentNotValidException;</span>
+
+<span class="del">import org.springframework.web.bind.MethodArgumentMissingRequestParamException;</span>
+<span class="add">// 删除此行，该类不存在且未被使用</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 编译警告 -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge warning">警告</span>
+                    编译警告（不影响编译，但建议关注）
+                </div>
+                <div class="card warning-card">
+                    <table>
+                        <thead>
+                            <tr><th>警告</th><th>说明</th><th>建议</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>source/target 8 is obsolete</td>
+                                <td>pom.xml 中 compiler.source/target = 8，但实际使用 JDK 21 编译</td>
+                                <td>改为 17 或 21</td>
+                            </tr>
+                            <tr>
+                                <td>'var' is a restricted type name</td>
+                                <td>chapter07/AopTest.java 第 83 行在 Java 8 模式下使用了 var（Java 10+ 关键字）</td>
+                                <td>升级 compiler.source 或重命名变量</td>
+                            </tr>
+                            <tr>
+                                <td>slf4j-log4j12 relocated</td>
+                                <td>slf4j-log4j12 已迁移至 slf4j-reload4j</td>
+                                <td>更新 artifactId</td>
+                            </tr>
+                            <tr>
+                                <td>Annotation processing warning</td>
+                                <td>Lombok 注解处理器在 classpath 上触发 javac 警告</td>
+                                <td>可忽略，或配置 -proc:none</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 多套Web配置冲突提示 -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge info">架构提示</span>
+                    多套 Web 配置共存（运行时潜在冲突）
+                </div>
+                <div class="card" style="border-left: 4px solid #1890ff;">
+                    <div class="card-title">项目包含 3 套独立的 Web 初始化配置，部署时可能冲突</div>
+                    <ul class="file-list">
+                        <li>chapter10 — WebAppInitializer（基于 AbstractAnnotationConfigDispatcherServletInitializer）</li>
+                        <li>chapter11 — WebAppInitializer（同上，另一套配置类）</li>
+                        <li>chapter12 — web.xml（传统 XML 配置，引用 chapter12.config.DataSourceConfig / WebMvcConfig）</li>
+                    </ul>
+                    <p style="font-size: 13px; color: #666; margin-top: 8px;">三个配置同时存在于 WEB-INF 中时，Servlet 容器启动会同时加载它们，可能导致 DispatcherServlet 路径冲突或 Bean 重复注册。教学项目中按章节学习时建议只保留当前章节的配置。</p>
+                </div>
+            </div>
+
+            <!-- 修复优先级 -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="badge info">修复优先级</span>
+                    建议修复顺序
+                </div>
+                <div class="card" style="border-left: 4px solid #722ed1;">
+                    <table>
+                        <thead>
+                            <tr><th width="60">顺序</th><th>修复项</th><th>影响范围</th><th>预计工作量</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>javax.servlet → jakarta.servlet（错误1）</td><td>7 个文件，批量替换</td><td>低</td></tr>
+                            <tr><td>2</td><td>javax.validation → jakarta.validation（错误2）</td><td>6 个文件，批量替换</td><td>低</td></tr>
+                            <tr><td>3</td><td>添加 HikariCP + jackson-datatype-jsr310 依赖（错误3、4）</td><td>pom.xml 添加 2 个依赖</td><td>低</td></tr>
+                            <tr><td>4</td><td>修复代码错误（错误6：import 缺失、错误类名）</td><td>2 个文件</td><td>低</td></tr>
+                            <tr><td>5</td><td>移动测试类到 src/test/java（错误5）</td><td>5 个文件移动</td><td>中</td></tr>
+                            <tr><td>6</td><td>处理编译警告（source/target 版本等）</td><td>pom.xml</td><td>低</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            本报告由 WorkBuddy 自动生成 | 检查工具：Maven 3.9.6 + JDK 21 + javac
+        </div>
+    </div>
+</body>
+</html>

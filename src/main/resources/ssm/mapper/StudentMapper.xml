@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  SSM 持久层 SQL —— resources/ssm/mapper/StudentMapper.xml
+  =====================================================
+  ① namespace = 接口全限定名（com.ssm.mapper.StudentMapper），
+     MapperScannerConfigurer 生成的代理按 "namespace.statementId" 定位到这里的 SQL
+  ② 该文件由 applicationContext.xml 的 SqlSessionFactoryBean.mapperLocations 加载
+     （不需要再写 mybatis-config.xml）
+  ③ 无 <cache>：二级缓存默认关闭，生产慎用
+-->
+<mapper namespace="com.ssm.mapper.StudentMapper">
+
+    <!-- 驼峰映射：数据库下划线列 ↔ 实体驼峰属性 -->
+    <resultMap id="StudentMap" type="com.ssm.entity.Student">
+        <id     property="id"    column="id"/>
+        <result property="name"  column="name"/>
+        <result property="age"   column="age"/>
+        <result property="email" column="email"/>
+        <result property="major" column="major"/>
+        <result property="score" column="score"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="StudentMap">
+        SELECT id, name, age, email, major, score FROM student ORDER BY id
+    </select>
+
+    <select id="selectById" parameterType="int" resultMap="StudentMap">
+        SELECT id, name, age, email, major, score FROM student WHERE id = #{id}
+    </select>
+
+    <!-- useGeneratedKeys：自增主键回填到实体的 id 属性（keyProperty） -->
+    <insert id="insert" parameterType="com.ssm.entity.Student"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student(name, age, email, major, score)
+        VALUES(#{name}, #{age}, #{email}, #{major}, #{score})
+    </insert>
+
+    <update id="updateById" parameterType="com.ssm.entity.Student">
+        UPDATE student
+        SET name = #{name}, age = #{age}, email = #{email},
+            major = #{major}, score = #{score}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="int">
+        DELETE FROM student WHERE id = #{id}
+    </delete>
+
+</mapper>

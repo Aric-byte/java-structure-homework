@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mybatis06.xml.StudentMapper">
+
+    <cache eviction="LRU" size="1024" flushInterval="60000" readOnly="false"/>
+    <!--
+    eviction="LRU"：最近最少使用缓存策略 默认值
+    size="1024"：缓存大小 默认值1024
+    flushInterval="60000"：缓存刷新间隔
+    readOnly="false"：是否只读缓存
+    eviction 取值：LRU、FIFO、NONE、ALL
+    LRU：最近最少使用缓存策略
+    FIFO：先进先出缓存策略
+    NONE：不使用缓存策略
+    ALL：所有缓存策略
+    -->
+
+    <resultMap id="StudentMap" type="com.mybatis06.entity.Student">
+        <id     column="id"     property="id"/>
+        <result column="name"   property="name"/>
+        <result column="age"    property="age"/>
+        <result column="email"  property="email"/>
+        <result column="major"  property="major"/>
+        <result column="score"  property="score"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="StudentMap" useCache="true">
+        SELECT id, name, age, email, major, score FROM student WHERE id = #{id}
+    </select>
+
+    <select id="selectByMajor" resultMap="StudentMap" useCache="true">
+        SELECT id, name, age, email, major, score FROM student WHERE major = #{major}
+    </select>
+
+    <select id="selectAll" resultMap="StudentMap" useCache="false">
+        SELECT id, name, age, email, major, score FROM student
+    </select>
+
+    <insert id="insert" parameterType="com.mybatis06.entity.Student" flushCache="true">
+        INSERT INTO student (name, age, email, major, score)
+        VALUES (#{name}, #{age}, #{email}, #{major}, #{score})
+    </insert>
+
+    <update id="updateById" parameterType="com.mybatis06.entity.Student" flushCache="true">
+        UPDATE student SET name = #{name}, age = #{age}, email = #{email},
+            major = #{major}, score = #{score} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" flushCache="true">
+        DELETE FROM student WHERE id = #{id}
+    </delete>
+
+</mapper>

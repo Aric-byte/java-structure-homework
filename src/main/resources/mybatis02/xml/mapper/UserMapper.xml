@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mybatis02.xml.UserMapper">
+
+    <!-- ==================== 基础 CRUD ==================== -->
+
+    <select id="findAll" resultType="com.mybatis02.entity.User">
+        SELECT * FROM user
+    </select>
+
+    <select id="findById" parameterType="int" resultType="com.mybatis02.entity.User">
+        SELECT * FROM user WHERE id = #{id}
+    </select>
+
+    <insert id="addUser" parameterType="com.mybatis02.entity.User"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user(username, password, email)
+        VALUES(#{username}, #{password}, #{email})
+    </insert>
+
+    <update id="updateUser" parameterType="com.mybatis02.entity.User">
+        UPDATE user
+        SET username = #{username},
+            password = #{password},
+            email = #{email}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteUser" parameterType="int">
+        DELETE FROM user WHERE id = #{id}
+    </delete>
+
+    <!-- ==================== mybatis02 新增 ==================== -->
+
+    <!-- 多参数 login（两个 @Param 参数） -->
+    <select id="login" resultType="com.mybatis02.entity.User">
+        SELECT * FROM user WHERE username = #{username} AND password = #{password}
+    </select>
+
+    <!-- =====================================================
+         resultMap 自定义映射（mybatis02 重点）
+
+         【resultType vs resultMap】
+
+         1. resultType（自动映射）
+            - 字段名 == 属性名 → 自动匹配
+            - 字段名 != 属性名 → 用 SQL AS 别名适配
+            - 优点：简单、单表够用
+            - 缺点：SQL 要写 AS、灵活性有限
+
+         2. resultMap（自定义映射）
+            - 手工指定 column → property 映射
+            - <id/> 主键（只能一个）、<result/> 其他字段（可多个）
+            - 优点：灵活、可复用、支持多表嵌套映射
+            - 缺点：配置繁琐
+            - 重点：resultMap 和 resultType 互斥，不能同时写！
+         ===================================================== -->
+    <resultMap id="userResultMap" type="com.mybatis02.entity.Vo">
+        <id     property="p1" column="id"/>
+        <result property="p2" column="username"/>
+        <result property="p3" column="password"/>
+    </resultMap>
+
+    <!-- 使用 resultMap 映射到 Vo -->
+    <select id="selectAllByVo" resultMap="userResultMap">
+        SELECT * FROM user
+    </select>
+
+    <!-- 使用 resultType + SQL AS 别名 映射到 Vo（无 resultMap） -->
+    <select id="selectAllVo" resultType="com.mybatis02.entity.Vo">
+        SELECT id AS p1, username AS p2, password AS p3 FROM user
+    </select>
+
+    <!-- 使用 resultType + SQL AS 别名 映射到 User（演示 AS 的作用） -->
+    <select id="selectAll" resultType="com.mybatis02.entity.User">
+        SELECT id AS uid, username, `password`, email FROM `user`
+    </select>
+
+    <!-- ==================== mybatis02 新增：#{} vs ${} ==================== -->
+
+    <!-- ① #{}：预编译占位符（推荐）
+         实际执行：WHERE username LIKE CONCAT('%', ?, '%')  参数安全绑定 -->
+    <select id="findLikeSafe" resultType="com.mybatis02.entity.User">
+        SELECT * FROM user WHERE username LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+
+    <!-- ② ${}：字符串直接拼接（有 SQL 注入风险，仅教学演示）
+         keyword 传入 "a' OR '1'='1" 时拼出：
+         SELECT * FROM user WHERE username LIKE '%a' OR '1'='1%'  → 恒真条件，查出全表 -->
+    <select id="findLikeUnsafe" resultType="com.mybatis02.entity.User">
+        SELECT * FROM user WHERE username LIKE '%${keyword}%'
+    </select>
+
+    <!-- ③ ${} 的合法场景：动态列名
+         #{} 会给值加引号变成 ORDER BY 'id DESC'（字符串字面量，排序失效）
+         列名只能用 ${} 拼接，且必须代码层校验白名单 -->
+    <select id="findByOrderColumn" resultType="com.mybatis02.entity.User">
+        SELECT * FROM user ORDER BY ${orderCol} LIMIT #{limit}
+    </select>
+
+</mapper>

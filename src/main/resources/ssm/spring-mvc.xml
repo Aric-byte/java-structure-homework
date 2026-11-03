@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/mvc
+           http://www.springframework.org/schema/mvc/spring-mvc.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!--
+      ============================================================
+      SSM 整合 —— 子容器（表现层，SpringMVC）
+      ============================================================
+      由 web.xml 中 servlet-name=ssm 的 DispatcherServlet 启动，映射 /ssm/*
+
+      【父子容器规则】
+      - 子容器（本文件）：只管 Controller（页面交互层，随请求创建销毁相关资源）
+      - 父容器（applicationContext.xml）：Service / Mapper / 事务（全局共享）
+      - 子能看到父的 Bean（注入 StudentService）✓
+      - 父看不到子的 Bean（Service 不能注入 Controller）✗
+      - 两个容器都扫同一个包会导致 Bean 重复注册 → 明确分工：子扫 controller、父扫 service
+    -->
+
+    <mvc:annotation-driven/>
+
+    <context:component-scan base-package="com.ssm.controller"/>
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+</beans>

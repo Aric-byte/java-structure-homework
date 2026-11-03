@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/aop
+           http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!--定义目标对象 程序中正常执行的业务对象-->
+    <bean id="userService" class="com.Spring.Aop.xml.UserServiceImpl"/>
+
+    <!--定义切面对象 代理对象的定义-->
+    <bean id="logAspect" class="com.Spring.Aop.xml.LogAspect"/>
+
+    <!--Aop切面配置 -->
+    <aop:config>
+        <aop:aspect ref="logAspect"> <!--定义切面对象-->
+            <!--明确切面上的切点-->
+            <aop:pointcut id="servicePointcut"
+                          expression="execution(* com.Spring.Aop.xml.UserService.*(..))"/>
+
+            <aop:pointcut id="savebefore"
+                          expression="execution(* com.Spring.Aop.xml.UserService.saveUser(..))"/>
+
+            <!--织入操作  将切点与通知方法关联起来-->
+            <aop:before method="beforeLog"
+                        pointcut-ref="savebefore"/>
+
+            <aop:after-returning method="afterReturningLog"
+                                 pointcut-ref="servicePointcut"
+                                 returning="result"/>
+
+            <aop:after-throwing method="afterThrowingLog"
+                                pointcut-ref="servicePointcut"
+                                throwing="ex"/>
+
+            <aop:after method="afterLog"
+                       pointcut-ref="servicePointcut"/>
+
+            <aop:around method="aroundLog"
+                        pointcut-ref="servicePointcut"/>
+
+        </aop:aspect>
+    </aop:config>
+
+</beans>

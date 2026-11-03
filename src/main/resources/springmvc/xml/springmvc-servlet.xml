@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/mvc
+           http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <!--普通的xml配置的SpringMVC容器  主要进行Controll的配置-->
+
+    <!--
+      SpringMVC XML 方式配置（三要素）
+      =====================================================
+
+      ① HandlerMapping：BeanNameUrlHandlerMapping 容器级别实例
+         —— 控制器 bean 的 name 就是访问 URL（以 / 开头才生效）
+    -->
+    <bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+
+     <!-- ③ 视图解析器：把 ModelAndView 里的逻辑视图名拼成 JSP 路径
+            studentList → prefix + "studentList" + suffix → /WEB-INF/views/studentList.jsp -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+
+
+    <!-- 如何自定义控制类
+
+     ② 控制器：XML 方式的控制器不写任何注解，
+            URL 完全由这里的 name 决定 → /xml/student/list
+            自定义的控制类
+            -->
+    <bean name="/student/list" class="com.springmvc.xml.StudentXmlController"/>
+
+
+
+
+
+
+    <!-- ④ 拦截器：XML 方式的 Controller 同样会被拦截
+         （MappedInterceptor 会被所有 HandlerMapping 识别，包括上面的 BeanNameUrlHandlerMapping） -->
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/student/**"/>
+            <bean class="com.springmvc.interceptor.TimeInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+</beans>

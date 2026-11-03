@@ -1,0 +1,11 @@
+/*
+ * 静态资源示例 —— 演示 <mvc:resources mapping="/static/**" location="/static/"/>
+ *
+ * 生产项目中 DispatcherServlet 通常映射 /，会抢走所有请求（包括静态资源），
+ * 必须配 <mvc:resources> 告诉 SpringMVC 这些路径直接放行。
+ *
+ * 访问：http://host/context/static/css/demo.css
+ */
+body {
+    background: #fafafa;
+}

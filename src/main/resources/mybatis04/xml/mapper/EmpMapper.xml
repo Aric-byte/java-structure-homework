@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mybatis04.xml.EmpMapper">
+
+    <!--
+      子查询目标：按部门编号查员工列表
+      被 DeptMapper.xml 中 collection 的 select 属性引用
+    -->
+    <select id="findByDeptno" parameterType="int" resultType="com.mybatis04.entity.Emp">
+        SELECT * FROM emp WHERE deptno = #{deptno}
+    </select>
+
+    <!--
+      多对一：association 嵌套 select（分步查询 + 延迟加载）
+      =====================================================
+      property="dept"  → 映射到 Emp.dept 属性
+      column="deptno"  → 把主查询的 deptno 列作为参数传给子查询
+      select="..."     → 子查询语句（DeptMapper.findById）
+      javaType="Dept"  → 嵌套对象类型（注意不是 ofType！）
+
+      延迟加载效果（lazyLoadingEnabled=true）：
+        ① 调用 getEmpWithDeptLazy() → 只执行主查询 SQL
+        ② 访问 emp.getDept()         → 才执行子查询 SQL
+    -->
+    <resultMap id="empWithDeptLazyMap" type="com.mybatis04.entity.Emp">
+        <id property="empno" column="empno"/>
+        <result property="ename" column="ename"/>
+        <result property="job" column="job"/>
+        <result property="mgr" column="mgr"/>
+        <result property="hiredate" column="hiredate"/>
+        <result property="sal" column="sal"/>
+        <result property="comm" column="comm"/>
+        <result property="deptno" column="deptno"/>
+        <association property="dept" column="deptno" javaType="com.mybatis04.entity.Dept"
+                     select="com.mybatis04.xml.DeptMapper.findById"/>
+    </resultMap>
+
+    <select id="getEmpWithDeptLazy" parameterType="int" resultMap="empWithDeptLazyMap">
+        SELECT * FROM emp WHERE empno = #{empno}
+    </select>
+
+</mapper>
