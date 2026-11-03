@@ -42,3 +42,4 @@ src/main/resources/common/db.properties
 .idea/dataSources*.xml
 .idea/MyBatisCodeHelperDatasource.xml
 .workbuddy/
+.idea/

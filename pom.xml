@@ -224,6 +224,18 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.4.0</version>
             </plugin>
+            <!-- 本地一键启动 Web：./mvnw jetty:run → http://localhost:8080/
+                 （Jetty 9.4 与 Tomcat 9 同为 javax.servlet，行为一致；正式部署仍可用 Tomcat 9） -->
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.4.53.v20231009</version>
+                <configuration>
+                    <webApp>
+                        <contextPath>/</contextPath>
+                    </webApp>
+                </configuration>
+            </plugin>
             <!-- Spring 4.3 内置的 CGLIB 需要反射访问 java.lang.ClassLoader#defineClass，
                  在 Java 9+ 模块系统下需显式放开，否则 @Configuration 代理生成失败 -->
             <plugin>
