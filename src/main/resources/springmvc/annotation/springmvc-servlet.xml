@@ -81,16 +81,14 @@
       文件上传 —— MultipartResolver
       =====================================================
       ① Bean 名【必须】叫 multipartResolver（DispatcherServlet 按这个名字查找）
-      ② defaultEncoding   → 解决上传中文文件名乱码
-      ③ maxUploadSize      → 单次请求最大 10MB（超出抛 MaxUploadSizeExceededException）
-      ④ maxInMemorySize    → 超过 1MB 的文件写临时目录，不占内存
+      ② Spring 6 已移除 CommonsMultipartResolver，改用 Servlet 容器自带的解析
+         StandardServletMultipartResolver（无需 commons-fileupload）
+      ③ 大小限制在 web.xml 的 <multipart-config> 中配置：单文件 10MB，超出抛
+         MaxUploadSizeExceededException；超过 1MB 的文件写临时目录，不占内存
+      ④ 中文文件名：由 web.xml 的 CharacterEncodingFilter 统一 UTF-8
     -->
     <bean id="multipartResolver"
-          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-        <property name="defaultEncoding" value="UTF-8"/>
-        <property name="maxUploadSize" value="10485760"/>
-        <property name="maxInMemorySize" value="1048576"/>
-    </bean>
+          class="org.springframework.web.multipart.support.StandardServletMultipartResolver"/>
 
     <!-- 视图解析器：@Controller 返回的逻辑视图名 → JSP 路径
          page/show → /WEB-INF/views/page/show.jsp（与 XML 方式配置原理相同） -->

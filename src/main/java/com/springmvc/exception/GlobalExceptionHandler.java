@@ -39,12 +39,12 @@ public class GlobalExceptionHandler {
         return errorPage("空指针异常", ex);
     }
 
-    /** 上传文件超限（见 multipartResolver.maxUploadSize=10MB）→ 友好提示而不是报错页 */
+    /** 上传文件超限（见 web.xml multipart-config 的 max-file-size=10MB）→ 友好提示而不是报错页 */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ModelAndView maxUploadException(MaxUploadSizeExceededException ex) {
         ModelAndView mv = new ModelAndView("error/error");
         mv.addObject("exClass", "上传文件过大");
-        mv.addObject("exMessage", "单个文件不能超过 10MB（multipartResolver.maxUploadSize）");
+        mv.addObject("exMessage", "单个文件不能超过 10MB（web.xml multipart-config）");
         return mv;
     }
 

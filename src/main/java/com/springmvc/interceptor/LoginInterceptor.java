@@ -1,10 +1,10 @@
 package com.springmvc.interceptor;
 
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * 自定义拦截器② —— 登录检查（演示 preHandle 返回 false 中断请求）
@@ -21,7 +21,7 @@ import javax.servlet.http.HttpSession;
  *   - 但已执行过 preHandle 的拦截器，其 afterCompletion 仍会执行
  *   - 需要自己对 response 做出响应（这里用 sendRedirect 重定向）
  */
-public class LoginInterceptor extends HandlerInterceptorAdapter {
+public class LoginInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,

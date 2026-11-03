@@ -57,10 +57,10 @@
 
 ```xml
 <!-- ① 配置：Bean 名必须叫 multipartResolver（DispatcherServlet 按名查找） -->
-<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-    <property name="defaultEncoding" value="UTF-8"/>  <!-- 中文文件名乱码 -->
-    <property name="maxUploadSize" value="10485760"/> <!-- 最大 10MB -->
-</bean>
+<!--    Spring 6 已移除 CommonsMultipartResolver，改用容器自带解析 -->
+<bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver"/>
+<!--    大小限制写在 web.xml 对应 servlet 的 <multipart-config><max-file-size>10485760</max-file-size> 中；
+        中文文件名由 CharacterEncodingFilter 统一 UTF-8 -->
 ```
 
 ```jsp
@@ -108,7 +108,7 @@
 |---------|------|
 | GET 参数 | Tomcat `server.xml` 的 `URIEncoding="UTF-8"` |
 | POST 请求体 | 本过滤器（`forceEncoding=true` 连响应也强制） |
-| 上传文件名 | `multipartResolver` 的 `defaultEncoding=UTF-8` |
+| 上传文件名 | `CharacterEncodingFilter`（web.xml）统一 UTF-8 |
 | JSP 页面 | `<%@ page pageEncoding="UTF-8" %>` |
 
 ### 3.2 静态资源 —— `<mvc:resources>`

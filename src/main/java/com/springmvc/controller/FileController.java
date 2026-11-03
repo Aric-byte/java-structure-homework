@@ -31,7 +31,7 @@ import java.util.stream.Stream;
  * ============================================================
  * 1. 表单必须声明 enctype="multipart/form-data" + method="post"
  * 2. 前提：容器里注册了名为 multipartResolver 的 MultipartResolver
- *    （见 springmvc-servlet.xml，CommonsMultipartResolver + commons-fileupload）
+ *    （见 springmvc-servlet.xml，StandardServletMultipartResolver；大小限制见 web.xml）
  * 3. 控制器用 MultipartFile 接收，常用 API：
  *    - getOriginalFilename() 原始文件名   - getSize() 字节数
  *    - isEmpty() 是否为空                 - transferTo(File/File) 保存到磁盘
